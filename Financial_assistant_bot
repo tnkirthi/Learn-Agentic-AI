@@ -1,0 +1,108 @@
+## multi agent system - financil advisor
+
+### step 1 - install packages
+
+!pip install -q google-generativeai
+
+
+### step 2 - import libraires
+
+import os
+from datetime import datetime
+import google.generativeai as genai
+from google.colab import userdata
+
+### step 3 - access api key
+
+genai.configure(api_key=userdata.get('GOOGLE_API_KEY')) 
+
+### step 4 - load llm model
+
+model = genai.GenerativeModel("gemini-2.5-flash", generation_config={"temperature": 0.3})
+
+################
+
+#### agent 1 : financial risk analyzer
+
+def risk_agent(user_input):
+  print("\n[Risk analysis agent]")
+  prompt = f"""
+  You are a financial analyst. Based on user input analyze the financial situation and classify risk level(Low, Medium, High)
+  Also list top financial concerns in 2-3 lines
+  User input: {user_input}
+  """
+  response = model.generate_content(prompt)
+  print(response.text)
+  return response.text
+
+### agent 2: Investment advisor
+
+def investment_agent(risk_summary):
+  print("\n[Investment Advisor agent]")
+
+  prompt = f"""
+  You are a Investment advisor agent. Based on the financial risk summary, suggest top 3 investment strategies.
+  Keep the output confine to 2-3 lines and in bullet points.
+  Financial risk summary: {risk_summary}
+  """
+  response = model.generate_content(prompt)
+  print(response.text)
+  return response.text
+
+
+#### agent 3 :  planning agent ( follow-up agent)
+
+def planning_agent(investment_plan):
+  print("\n[Financial Planning Agent]")
+
+  prompt = f"""
+  You are a financial planner. Based on the financial risk and Investment advise what follow-up questions should financial advisor ask to get more details.
+  Keep the output confine to 2-3 lines and in bullet points.
+  Financial risk summary: {investment_plan}
+  """
+  response = model.generate_content(prompt)
+  print(response.text)
+  return response.text
+
+
+### Agent 4: Logger agent
+
+def logger_agent(name, cid, input_text, summary, plan, followups):
+  print("\n[Logger agent]")
+
+  log_entry = f"""
+  Time: {datetime.now()}
+  Name: {name}
+  Client ID: {cid}
+  Input: {input_text}
+  Summary: {summary}
+  Plan: {plan}
+  Follow-ups: {followups}
+  """
+  with open("financial_advisor_log.txt", "a") as f:
+    f.write(log_entry)
+
+## user input
+
+name = input("Enter your name: ")
+cid = input("Enter your client ID: ")
+user_input = input("Describe your financial situation( income, savings, debts, goals): ")
+
+
+### run multi agent pipeline
+
+## step1 - risk analysis
+
+risk_summary = risk_agent(user_input)
+
+## step2 - investment advice
+
+investment_plan = investment_agent(risk_summary)
+
+## step3 - follow-up questions
+
+followups = planning_agent(investment_plan)
+
+  ## step4 - log the conversation
+
+logger_agent(name, cid, user_input, risk_summary, investment_plan, followups)
